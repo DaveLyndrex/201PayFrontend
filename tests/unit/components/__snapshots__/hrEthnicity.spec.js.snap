@@ -1,0 +1,57 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test alert child component should has the expected html structure 1`] = `
+<v-app>
+  <b-container>
+    <div
+      class="alert-cont"
+      id="alert"
+      style="display: none;"
+    >
+      <!---->
+       
+      <!---->
+       
+      <!---->
+    </div>
+     
+    <div>
+      <b-breadcrumb
+        class="sticky bg-white"
+      >
+        <b-breadcrumb-item
+          to="/"
+        >
+          Home
+        </b-breadcrumb-item>
+          
+        <b-breadcrumb-item
+          active=""
+        >
+          
+        </b-breadcrumb-item>
+      </b-breadcrumb>
+    </div>
+     
+    <v-data-table
+      class="elevation-1 default-table default-table default-table"
+      headers="[object Object],[object Object],[object Object],[object Object]"
+      items=""
+      items-per-page="10"
+      loading-text="Loading... Please wait."
+      search=""
+    />
+     
+    <v-btn
+      class="mb-2 px-8 font-color d-none"
+      color="whitesmoke"
+      data-test="cancel"
+      data-testid="test"
+    >
+      
+    Cancel
+  
+    </v-btn>
+  </b-container>
+</v-app>
+`;

@@ -1,0 +1,287 @@
+<template>
+  <v-app>
+  <b-container>
+    <Alert :response="response" :message="message" id="alert" style="display: none"/>
+    <BreadCrumb/>
+    <DefaultDataTable
+     class="default-table"
+      v-if="!openForm"
+      :headers="headers"
+      :items="costCenter"
+      :editedItem="editedItem"
+      :defaultItem="defaultItem"
+      :dataLoading="loading"
+    ></DefaultDataTable>
+
+    <DefaultForm
+       class="emp-d-container default-form"
+      v-else
+      :inputConfig="inputConfig"
+      :model="editedItem"
+      :defaultInputItem="defaultItem"
+      :edit="edit"
+      ref="form"
+    >
+    <template v-slot:actionBtns>
+          <v-btn class="mb-2 px-8 font-color" color="whitesmoke" @click="close">
+            Cancel
+          </v-btn>
+          <v-btn
+            :loading="savingChanges"
+            class="mb-2 px-8"
+            dark
+            color="blue"
+            @click="saveItem(editedItem)"
+          >
+            Save
+          </v-btn>
+        </template>
+      </DefaultForm
+    >
+     <v-btn
+      data-test="cancel"
+      class="mb-2 px-8 font-color d-none"
+      data-testid="test"
+      color="whitesmoke"
+      @click="close"
+    >
+      Cancel
+    </v-btn>
+    <v-btn
+      data-test="save"
+      :loading="savingChanges"
+      class="mb-2 px-8 d-none"
+      dark
+      color="blue"
+      @click="saveItem(editedItem)"
+    >
+      Save
+    </v-btn>
+    </b-container>
+  </v-app>
+  
+</template>
+
+<script>
+import BreadCrumb from /* webpackChunkName: "Data Table" */ "@/components/BreadCrumbs.vue";
+import DefaultDataTable from /* webpackChunkName: "Data Table" */ "@/components/DataTable.vue";
+import DefaultForm from /* webpackChunkName: "Form" */ "@/components/Form.vue";
+import { EventBus } from "@/bus/bus";
+import PromptAlert from "@/utils/PromptAlert";
+import Decryption from "@/utils/Decryption";
+import Encryption from "@/utils/Encryption";
+import CRUD from "@/utils/CRUD";
+import Validation from "@/utils/Validation";
+import Alert from "@/components/Alert.vue";
+
+export default {
+  components: {
+    DefaultDataTable,
+    DefaultForm,
+    BreadCrumb,
+    Alert
+  },
+  mixins: [PromptAlert, Decryption, Encryption, CRUD],
+  data() {
+    return {
+      openForm: false,
+      loading: true,
+      savingChanges: false,
+      response: "",
+      message: "",
+      index:1,
+      headers: [
+        { text: "Cost Center Code", value: "CostCenterCode" },
+        { text: "Cost Center Name", value: "CostCenterName" },
+        { text: "Actions", value: "actions", sortable: false },
+      ],
+      costCenter: [],
+      editedIndex: -1,
+      inputConfig: [
+        {
+          inputLabel: "Cost Center Code",
+          inputType: "text",
+          inputModel: "CostCenterCode",
+          rules: [(v) => Validation.required(v, "Cost Center Code")],
+        },
+        {
+          inputLabel: "Cost Center Name",
+          inputType: "text",
+          inputModel: "CostCenterName",
+          rules: [(v) => Validation.required(v, "Cost Center Name")],
+        },
+      ],
+      editedItem: {
+        ID: 0,
+        CostCenterCode: null,
+        CostCenterName: null,
+        ModifiedBy: null,
+      },
+      defaultItem: {
+        ID: 0,
+        CostCenterCode: null,
+        CostCenterName: null,
+        ModifiedBy: null,
+      },
+    };
+  },
+
+  watch: {
+    openForm(val) {
+      val || this.close();
+    },
+  },
+
+  created() {
+    EventBus.$on("initializeData", () => {
+      this.retrieveData();
+    });
+
+    EventBus.$on("addNewItem", (props) => {
+      if (props.index != -1) this.edit = true;
+      else this.edit = false;
+      this.editedItem = props.item;
+      this.editedIndex = props.index;
+      this.openForm = true;
+    });
+
+    EventBus.$on("saveItem", (props) => {
+      if (this.editedIndex > -1) {
+        Object.assign(this.costCenter[this.editedIndex], props.item);
+      } else {
+        this.costCenter.push(props.item);
+      }
+    });
+
+    EventBus.$on("closeForm", () => {
+      this.close();
+    });
+
+    EventBus.$on("deleteItem", (props) => {
+      console.log(props)
+      if (!this.savingChanges) {
+        this.deleteItem(props);
+      }
+    });
+
+    this.retrieveData();
+  },
+
+  methods: {
+     saveItem(data) {
+      if (this.$refs.form.validateForm()) {
+        if (this.editedIndex > -1) {
+          this.updateItem(data);
+        } else {
+          this.createNewItem(data);
+        }
+      }
+    },
+
+    retrieveData: async function () {
+      this.loading = true;
+      try {
+        let getdata = await this.retrieve(
+          "getCostCenterSetups",
+          "setCostCenterSetups",
+          "allCostCenterSetups"
+        );
+        this.costCenter = getdata ? getdata : [];
+      } catch (error) {
+        console.log(error);
+      }
+      this.loading = false;
+    },
+
+    createNewItem: async function (data) {
+      this.savingChanges = true;
+      let create = await this.create(data, "costCenterAction");
+      //   this.banks = this.$store.getters.allBanks;
+      if (create) {
+        await this.retrieveData();
+        this.savingChanges = false;
+        this.close();
+        this.response = "success";
+        this.message = "Successfully Added";
+
+        document.getElementById("alert").style.display = "block";
+        setTimeout(
+          () => (document.getElementById("alert").style.display = "none"),
+          3000
+        );
+      }
+      this.savingChanges = false;
+    },
+
+    updateItem: async function (data) {
+      this.savingChanges = true;
+      let update = await this.update(
+        data,
+        this.editedIndex,
+        "updatetCostCenterSetups",
+        "allCostCenterSetups"
+      );
+
+      if (update) {
+        this.costCenter = update;
+        //  this.savingChanges = false;
+        this.close();
+        this.response = "success";
+        this.message = "Successfully Updated";
+        document.getElementById("alert").style.display = "block";
+        setTimeout(
+          () => (document.getElementById("alert").style.display = "none"),
+          3000
+        );
+      } else {
+        this.costCenter = [];
+      }
+      this.savingChanges = false;
+      // await this.retrieveData();
+    },
+
+    deleteItem: async function (data) {
+      this.savingChanges = true;
+      // let del = await this.delete(data, "deleteCostCenterSetup");
+     try {
+        let del = await this.$store.dispatch("deleteCostCenterSetup", {
+        item: data.itemToDelete,
+        id: data.itemToDelete.ID,
+      });
+      if (del) {
+        this.response = "success";
+        this.message = "Successfully Deleted";
+        document.getElementById("alert").style.display = "block";
+        setTimeout(
+          () => (document.getElementById("alert").style.display = "none"),
+          3000
+        );
+        await this.retrieveData();
+       
+      }
+     } catch (error) {
+       console.log(error);
+     }
+      this.savingChanges = false;
+    },
+
+    close() {
+      this.index++
+      this.openForm = false;
+      this.editedItem = Object.assign({}, this.defaultItem);
+      this.editedIndex = -1;
+    },
+  },
+};
+</script>
+
+<style scoped>
+#alert{
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  word-wrap: break-word;
+}
+</style>
+

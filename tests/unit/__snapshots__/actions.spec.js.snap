@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`rendering the vue renders the vue component 1`] = `
+<v-app openform="true" editeditem="" editedindex="0" data="[object Object]">
+  <b-container>
+    <alert-stub message="" response="" id="alert" style="display: none;"></alert-stub>
+    <breadcrumb-stub></breadcrumb-stub>
+    <defaultdatatable-stub headers="[object Object],[object Object],[object Object]" items="" editeditem="[object Object]" defaultitem="[object Object]"></defaultdatatable-stub>
+  </b-container>
+</v-app>
+`;
